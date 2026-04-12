@@ -51,6 +51,9 @@ class Settings(BaseSettings):
         # Standard postgresql driver is used for sync
         if v.startswith("postgres://"):
             v = v.replace("postgres://", "postgresql://", 1)
+        # Ensure we don't try to use the asyncpg dialect even if it's passed in
+        if "postgresql+asyncpg://" in v:
+            v = v.replace("postgresql+asyncpg://", "postgresql://")
         return v
 
 
