@@ -15,9 +15,10 @@ from db.database import Base
 class Room(Base):
     __tablename__ = "rooms"
 
-    id: Mapped[str] = mapped_column(String(20), primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    room_name: Mapped[str] = mapped_column(String(100), nullable=False)
     passkey_hash: Mapped[str] = mapped_column(Text, nullable=False)  # SHA-256 hex
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -35,7 +36,7 @@ class Room(Base):
     members  = relationship("RoomMember", back_populates="room",          lazy="select", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
-        return f"<Room id={self.id} name={self.name!r}>"
+        return f"<Room id={self.id} name={self.room_name!r}>"
 
 
 class RoomMember(Base):
@@ -53,8 +54,8 @@ class RoomMember(Base):
         nullable=False,
         index=True,
     )
-    room_id: Mapped[str] = mapped_column(
-        String(20),
+    room_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("rooms.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

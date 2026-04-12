@@ -20,14 +20,14 @@ def create_room(
     db: Session, data: CreateRoomRequest, creator_id: str
 ) -> Room:
     """
-    Create a new private room using the provided room_id and name.
+    Create a new private room.
+    Passkey is hashed with SHA-256 before persistence.
     """
     creator_uuid = uuid.UUID(creator_id)
     room = Room(
-        id=data.room_id,
-        name=data.name,
-        description=data.description,
-        passkey_hash=data.passkey_hash,
+        id=uuid.uuid4(),
+        room_name=data.room_name,
+        passkey_hash=hash_passkey(data.passkey),   # SHA-256 – plain passkey never stored
         created_by=creator_uuid,
     )
     db.add(room)
@@ -39,9 +39,9 @@ def create_room(
     db.refresh(room)
 
     # Automatically create Stream messaging channel with creator as member
-    stream_service.create_channel(room.id, creator_id, room.name)
+    stream_service.create_channel(str(room.id), creator_id, room.room_name)
 
-    logger.info("Room created: %s (%s) by user %s", room.name, room.id, creator_id)
+    logger.info("Room created: %s by user %s", room.room_name, creator_id)
     return room
 
 
@@ -49,7 +49,7 @@ def join_room(
     db: Session, data: JoinRoomRequest, user_id: str
 ) -> Room:
     """
-    Validate passkey_hash and add user to room.
+    Validate passkey and add user to room.
     Raises ValueError on invalid room or passkey.
     """
     # Fetch room
@@ -58,8 +58,8 @@ def join_room(
     if not room:
         raise ValueError("Room not found")
 
-    # Verify passkey_hash (direct comparison as it's pre-hashed)
-    if room.passkey_hash != data.passkey_hash:
+    # Verify passkey
+    if not verify_passkey(data.passkey, room.passkey_hash):
         raise ValueError("Invalid passkey")
 
     user_uuid = uuid.UUID(user_id)
@@ -79,7 +79,7 @@ def join_room(
     db.flush()
 
     # Automatically add new member to the Stream channel
-    stream_service.add_member_to_channel(room.id, user_id)
+    stream_service.add_member_to_channel(str(room.id), user_id)
 
     logger.info("User %s joined room %s", user_id, room.id)
     return room
@@ -98,7 +98,7 @@ def get_user_rooms(db: Session, user_id: str) -> list[Room]:
     return list(result.scalars().all())
 
 
-def is_room_member(db: Session, room_id: str, user_id: str) -> bool:
+def is_room_member(db: Session, room_id: uuid.UUID, user_id: str) -> bool:
     """Return True if user is a member of the given room."""
     user_uuid = uuid.UUID(user_id)
     stmt = select(RoomMember).where(

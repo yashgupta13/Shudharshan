@@ -57,21 +57,19 @@ class UserResponse(BaseModel):
 # ─── Rooms ───────────────────────────────────────────────────────────────────
 
 class CreateRoomRequest(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
-    passkey_hash: str = Field(..., min_length=64, max_length=128)
-    room_id: str = Field(..., min_length=4, max_length=20)
+    room_name: str = Field(..., min_length=1, max_length=100)
+    passkey: str = Field(..., min_length=6, max_length=128,
+                         description="Plain-text passkey – hashed server-side before storage")
 
 
 class JoinRoomRequest(BaseModel):
-    room_id: str = Field(..., min_length=1, max_length=20)
-    passkey_hash: str = Field(..., min_length=64, max_length=128)
+    room_id: uuid.UUID
+    passkey: str = Field(..., min_length=1, max_length=128)
 
 
 class RoomResponse(BaseModel):
-    id: str
-    name: str
-    description: Optional[str] = None
+    id: uuid.UUID
+    room_name: str
     created_by: uuid.UUID
     created_at: datetime
 
