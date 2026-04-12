@@ -1,0 +1,27 @@
+# ── Web framework ────────────────────────────────────────────────────────────
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+
+# ── Database ─────────────────────────────────────────────────────────────────
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+
+# ── Auth / crypto ────────────────────────────────────────────────────────────
+pyjwt==2.10.0
+bcrypt==4.2.1
+cryptography==43.0.3
+
+# ── Config ───────────────────────────────────────────────────────────────────
+pydantic[email]==2.10.1
+pydantic-settings==2.6.1
+
+# ── WebSockets (bundled with uvicorn[standard]) ───────────────────────────────
+websockets==13.1
+
+# ── Logging / dev utilities ──────────────────────────────────────────────────
+python-dotenv==1.0.1
+
+# ── Stream API ─────────────────────────────────────────────────────────
+stream-video-python==0.1.0
+stream-chat==4.4.0

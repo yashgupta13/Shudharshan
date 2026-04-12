@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+  }
+
+  body {
+    background-color: #050508;
+    color: #e0e0f0;
+    font-family: 'IBM Plex Mono', monospace;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a0a12;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #252540;
+    border-radius: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #00d4ff44;
+  }
+
+  ::selection {
+    background: rgba(0, 212, 255, 0.25);
+    color: #e0e0f0;
+  }
+}
+
+@layer components {
+  .scanline {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.04) 2px,
+      rgba(0, 0, 0, 0.04) 4px
+    );
+  }
+
+  .grid-bg {
+    background-image: 
+      linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .glass {
+    background: rgba(15, 15, 26, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .btn-primary {
+    @apply relative px-6 py-2.5 font-display text-xs tracking-widest uppercase
+           text-void bg-accent border border-accent
+           hover:bg-accent-dim hover:shadow-glow-accent
+           active:scale-95 transition-all duration-150
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none;
+  }
+
+  .btn-ghost {
+    @apply relative px-6 py-2.5 font-display text-xs tracking-widest uppercase
+           text-accent border border-border-bright
+           hover:border-accent hover:bg-accent-glow hover:shadow-glow-accent
+           active:scale-95 transition-all duration-150
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply relative px-6 py-2.5 font-display text-xs tracking-widest uppercase
+           text-void bg-danger border border-danger
+           hover:shadow-glow-danger active:scale-95 transition-all duration-150;
+  }
+
+  .input-field {
+    @apply w-full bg-void border border-border-bright rounded-none px-4 py-3
+           text-text text-sm font-body placeholder-muted
+           focus:outline-none focus:border-accent focus:shadow-glow-accent
+           transition-all duration-200;
+  }
+
+  .tag-encrypted {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs 
+           text-success border border-success/30 bg-success/10;
+  }
+
+  .corner-bracket::before,
+  .corner-bracket::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: #00d4ff;
+    border-style: solid;
+  }
+
+  .corner-bracket::before {
+    top: -1px;
+    left: -1px;
+    border-width: 1px 0 0 1px;
+  }
+
+  .corner-bracket::after {
+    bottom: -1px;
+    right: -1px;
+    border-width: 0 1px 1px 0;
+  }
+
+  .msg-bubble-self {
+    @apply bg-accent/10 border border-accent/20 text-text;
+  }
+
+  .msg-bubble-other {
+    @apply bg-panel border border-border-bright text-text;
+  }
+
+  .typing-dot {
+    @apply w-1.5 h-1.5 rounded-full bg-accent;
+    animation: typingBounce 1.2s ease-in-out infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg-enter {
+  animation: fadeInUp 0.25s ease-out forwards;
+}
+
+/* Glow pulse for status indicators */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 4px currentColor; }
+  50% { box-shadow: 0 0 12px currentColor, 0 0 20px currentColor; }
+}
+
+.status-online {
+  animation: glowPulse 2s ease-in-out infinite;
+}
