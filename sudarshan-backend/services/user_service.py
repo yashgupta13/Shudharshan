@@ -70,6 +70,7 @@ def authenticate_user(
         access_token=token,
         token_type="bearer",
         expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user_id=str(user.id),
     )
 
 

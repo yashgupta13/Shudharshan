@@ -14,7 +14,6 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           crypto: ['crypto-js'],
-          socket: ['socket.io-client'],
         },
       },
     },
