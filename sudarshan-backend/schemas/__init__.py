@@ -97,3 +97,10 @@ class DHCompleteRequest(BaseModel):
 class DHCompleteResponse(BaseModel):
     shared_secret_hex: str
     aes_256_key_hint: str
+
+
+# ─── Stream API ──────────────────────────────────────────────────────────────
+
+class StreamTokenResponse(BaseModel):
+    token: str
+    user_id: str

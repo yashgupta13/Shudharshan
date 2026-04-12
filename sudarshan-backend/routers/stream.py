@@ -8,24 +8,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.security import get_current_user_id
 from db.database import get_db
-from core.config import settings
+from schemas import StreamTokenResponse
 from services import stream_service, user_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get(
-    "/stream/token",
+    "/stream/token/{user_id}",
     summary="Generate a Stream Video token for the authenticated user",
+    response_model=StreamTokenResponse
 )
 async def get_stream_token(
-    user_id: str = Depends(get_current_user_id),
+    user_id: str,
+    current_user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Returns a Stream Video token and the API key.
-    Syncs the user's username with Stream before generating the token.
+    Returns a Stream token for the requested user, if they are authenticated.
     """
+    if user_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to get token for this user"
+        )
     # Fetch user to get username for syncing
     user = await user_service.get_user_by_id(db, user_id)
     if not user:
@@ -41,12 +47,10 @@ async def get_stream_token(
             username=user.username
         )
         
-        return {
-            "token": token,
-            "api_key": settings.STREAM_API_KEY,
-            "user_id": str(user.id),
-            "username": user.username
-        }
+        return StreamTokenResponse(
+            token=token,
+            user_id=user_id,
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
