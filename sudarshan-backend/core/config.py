@@ -3,9 +3,9 @@ Application configuration – reads from environment / .env file.
 """
 
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 
-from pydantic import field_validator, Field, AliasChoices
+from pydantic import field_validator, Field, AliasChoices, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,9 +22,52 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # ── Database ────────────────────────────────────────────────────────────
-    DATABASE_URL: str = Field(
+    # Unified URL (Vercel style)
+    DATABASE_URL: Optional[str] = Field(
+        default=None,
         validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_URL", "POSTGRES_URL_NON_POOLING")
-    )  # e.g. postgresql+asyncpg://user:pass@host/db
+    )
+
+    # Individual components (Supabase style) - fallback if URL is not provided
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: Optional[str] = None
+    POSTGRES_HOST: Optional[str] = None
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DATABASE: str = "postgres"
+
+    @model_validator(mode="after")
+    def assemble_db_url(self) -> "Settings":
+        """
+        If DATABASE_URL is not provided via env, construct it from individual components.
+        """
+        if not self.DATABASE_URL:
+            if not self.POSTGRES_HOST:
+                # If neither URL nor HOST is provided, we can't connect
+                return self
+            
+            user_part = self.POSTGRES_USER
+            if self.POSTGRES_PASSWORD:
+                user_part += f":{self.POSTGRES_PASSWORD}"
+            
+            self.DATABASE_URL = (
+                f"postgresql://{user_part}@{self.POSTGRES_HOST}:"
+                f"{self.POSTGRES_PORT}/{self.POSTGRES_DATABASE}"
+            )
+        
+        # Finally, sanitize the URL regardless of source
+        self.DATABASE_URL = self.sanitize_db_url(self.DATABASE_URL)
+        return self
+
+    @classmethod
+    def sanitize_db_url(cls, v: str) -> str:
+        """Helper to sanitize common connection string inconsistencies."""
+        # Standard postgresql driver is used for sync
+        if v.startswith("postgres://"):
+            v = v.replace("postgres://", "postgresql://", 1)
+        # Ensure we don't try to use the asyncpg dialect even if it's passed in
+        if "postgresql+asyncpg://" in v:
+            v = v.replace("postgresql+asyncpg://", "postgresql://")
+        return v
 
     # ── JWT ─────────────────────────────────────────────────────────────────
     JWT_SECRET_KEY: str
@@ -43,18 +86,6 @@ class Settings(BaseSettings):
     DH_PRIME: int = 0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF
     DH_GENERATOR: int = 2
 
-    @field_validator("DATABASE_URL")
-    @classmethod
-    def validate_db_url(cls, v: str) -> str:
-        if not v:
-            raise ValueError("DATABASE_URL must be set")
-        # Standard postgresql driver is used for sync
-        if v.startswith("postgres://"):
-            v = v.replace("postgres://", "postgresql://", 1)
-        # Ensure we don't try to use the asyncpg dialect even if it's passed in
-        if "postgresql+asyncpg://" in v:
-            v = v.replace("postgresql+asyncpg://", "postgresql://")
-        return v
 
 
 @lru_cache
