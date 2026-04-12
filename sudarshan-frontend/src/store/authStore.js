@@ -29,10 +29,10 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  signup: async (username, password) => {
+  signup: async (username, email, password) => {
     set({ isLoading: true, error: null });
     try {
-      await authApi.signup({ username, password });
+      await authApi.signup({ username, email, password });
       // Auto-login after signup
       return get().login(username, password);
     } catch (err) {

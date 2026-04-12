@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { Shield, Lock, User, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
+import { Shield, Lock, User, Eye, EyeOff, CheckCircle, XCircle, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function StrengthBar({ password }) {
@@ -37,14 +37,14 @@ function StrengthBar({ password }) {
 }
 
 export default function SignupPage() {
-  const [form, setForm] = useState({ username: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirm: '' });
   const [showPass, setShowPass] = useState(false);
   const { signup, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.username || !form.password) {
+    if (!form.username || !form.email || !form.password) {
       toast.error('All fields required');
       return;
     }
@@ -56,7 +56,7 @@ export default function SignupPage() {
       toast.error('Password too weak');
       return;
     }
-    const result = await signup(form.username, form.password);
+    const result = await signup(form.username, form.email, form.password);
     if (result.success) {
       toast.success('Account created. Welcome to SUDARSHAN.');
       navigate('/dashboard');
@@ -107,6 +107,21 @@ export default function SignupPage() {
                   placeholder="Choose username"
                   value={form.username}
                   onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted tracking-widest">EMAIL ADDRESS</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
+                <input
+                  type="email"
+                  autoComplete="email"
+                  className="input-field pl-10 focus:border-gold focus:shadow-glow-gold"
+                  placeholder="operator@sudarshan.test"
+                  value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 />
               </div>
             </div>

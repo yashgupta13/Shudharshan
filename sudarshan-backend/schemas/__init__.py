@@ -20,7 +20,7 @@ class MessageBase(BaseModel):
 
 class SignupRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_]+$")
-    email: EmailStr
+    email: Optional[EmailStr] = None
     password: str = Field(..., min_length=8, max_length=128)
 
     @field_validator("password")
@@ -57,19 +57,21 @@ class UserResponse(BaseModel):
 # ─── Rooms ───────────────────────────────────────────────────────────────────
 
 class CreateRoomRequest(BaseModel):
-    room_name: str = Field(..., min_length=1, max_length=100)
-    passkey: str = Field(..., min_length=6, max_length=128,
-                         description="Plain-text passkey – hashed server-side before storage")
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    passkey_hash: str = Field(..., min_length=64, max_length=128)
+    room_id: str = Field(..., min_length=4, max_length=20)
 
 
 class JoinRoomRequest(BaseModel):
-    room_id: uuid.UUID
-    passkey: str = Field(..., min_length=1, max_length=128)
+    room_id: str = Field(..., min_length=1, max_length=20)
+    passkey_hash: str = Field(..., min_length=64, max_length=128)
 
 
 class RoomResponse(BaseModel):
-    id: uuid.UUID
-    room_name: str
+    id: str
+    name: str
+    description: Optional[str] = None
     created_by: uuid.UUID
     created_at: datetime
 

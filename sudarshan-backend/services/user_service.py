@@ -32,10 +32,13 @@ def create_user(db: Session, data: SignupRequest) -> User:
             raise ValueError("Username already taken")
         raise ValueError("Email already registered")
 
+    # Use placeholder email if not provided
+    email = data.email or f"{data.username}@sudarshan.local"
+
     user = User(
         id=uuid.uuid4(),
         username=data.username,
-        email=data.email,
+        email=email,
         password_hash=hash_password(data.password),
     )
     db.add(user)

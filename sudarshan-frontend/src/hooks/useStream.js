@@ -18,7 +18,8 @@ export function useStream() {
 
       try {
         // Fetch Stream token for this user from our backend
-        const { token } = await streamApi.getToken(user.id);
+        const response = await streamApi.getToken(user.id);
+        const { token, user_id: correctId } = response;
         
         if (unmounted) return;
 
@@ -28,19 +29,18 @@ export function useStream() {
         }
 
         // Only connect if not already connected as this user
-        if (chat.userID !== user.id) {
+        if (chat.userID !== correctId) {
           await chat.disconnectUser(); // Disconnect previous if any
           await chat.connectUser(
             {
-              id: user.id || user.username,
+              id: correctId,
               name: user.username,
-              // add mapping for Avatar/Image if available
             },
             token
           );
         }
 
-        const video = initStreamVideoClient(user, token);
+        const video = initStreamVideoClient({ ...user, id: correctId }, token);
 
         if (unmounted) {
             // Disconnect if unmounted while connecting
