@@ -1,11 +1,10 @@
 """
-Stream API service layer (Chat & Video).
+Stream API service layer (Chat).
 """
 
 import logging
 from typing import Optional
 from stream_chat import StreamChat
-from stream_video import StreamVideo
 
 from core.config import settings
 
@@ -17,10 +16,6 @@ chat_client = StreamChat(
     api_secret=settings.STREAM_API_SECRET,
 )
 
-video_client = StreamVideo(
-    api_key=settings.STREAM_API_KEY,
-    api_secret=settings.STREAM_API_SECRET,
-)
 
 def sync_user(user_id: str, username: str) -> None:
     """
