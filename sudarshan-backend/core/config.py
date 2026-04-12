@@ -5,7 +5,7 @@ Application configuration – reads from environment / .env file.
 from functools import lru_cache
 from typing import List
 
-from pydantic import field_validator
+from pydantic import field_validator, Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # ── Database ────────────────────────────────────────────────────────────
-    DATABASE_URL: str  # e.g. postgresql+asyncpg://user:pass@host/db
+    DATABASE_URL: str = Field(
+        validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_URL", "POSTGRES_URL_NON_POOLING")
+    )  # e.g. postgresql+asyncpg://user:pass@host/db
 
     # ── JWT ─────────────────────────────────────────────────────────────────
     JWT_SECRET_KEY: str
