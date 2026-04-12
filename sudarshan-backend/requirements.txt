@@ -23,5 +23,4 @@ websockets>=12,<15
 python-dotenv>=1.0,<2.0
 
 # ── Stream API ───────────────────────────────────────────────────────────────
-stream-video-python>=0.1,<1.0
 stream-chat>=4.0,<5.0
