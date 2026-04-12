@@ -2,6 +2,7 @@
 Application configuration – reads from environment / .env file.
 """
 
+import urllib.parse
 from functools import lru_cache
 from typing import List, Optional
 
@@ -25,7 +26,7 @@ class Settings(BaseSettings):
     # Unified URL (Vercel style)
     DATABASE_URL: Optional[str] = Field(
         default=None,
-        validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_URL", "POSTGRES_URL_NON_POOLING")
+        validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_URL", "POSTGRES_URL_NON_POOLING", "POSTGRES_PRISMA_URL")
     )
 
     # Individual components (Supabase style) - fallback if URL is not provided
@@ -45,13 +46,19 @@ class Settings(BaseSettings):
                 # If neither URL nor HOST is provided, we can't connect
                 return self
             
-            user_part = self.POSTGRES_USER
+            # Sanitise and encode components
+            host = self.POSTGRES_HOST.strip()
+            user = urllib.parse.quote_plus(self.POSTGRES_USER.strip())
+            db_name = self.POSTGRES_DATABASE.strip()
+            
+            user_part = user
             if self.POSTGRES_PASSWORD:
-                user_part += f":{self.POSTGRES_PASSWORD}"
+                password = urllib.parse.quote_plus(self.POSTGRES_PASSWORD.strip())
+                user_part += f":{password}"
             
             self.DATABASE_URL = (
-                f"postgresql://{user_part}@{self.POSTGRES_HOST}:"
-                f"{self.POSTGRES_PORT}/{self.POSTGRES_DATABASE}"
+                f"postgresql://{user_part}@{host}:"
+                f"{self.POSTGRES_PORT}/{db_name}"
             )
         
         # Finally, sanitize the URL regardless of source
@@ -61,6 +68,7 @@ class Settings(BaseSettings):
     @classmethod
     def sanitize_db_url(cls, v: str) -> str:
         """Helper to sanitize common connection string inconsistencies."""
+        v = v.strip()
         # Standard postgresql driver is used for sync
         if v.startswith("postgres://"):
             v = v.replace("postgres://", "postgresql://", 1)
