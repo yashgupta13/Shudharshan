@@ -75,6 +75,21 @@ class Settings(BaseSettings):
         # Ensure we don't try to use the asyncpg dialect even if it's passed in
         if "postgresql+asyncpg://" in v:
             v = v.replace("postgresql+asyncpg://", "postgresql://")
+
+        # Strip the 'supa' parameter which breaks psycopg2
+        if "supa=" in v:
+            try:
+                parsed = urllib.parse.urlparse(v)
+                params = urllib.parse.parse_qs(parsed.query)
+                if "supa" in params:
+                    params.pop("supa")
+                new_query = urllib.parse.urlencode(params, doseq=True)
+                v = urllib.parse.urlunparse(parsed._replace(query=new_query))
+            except Exception:
+                # Fallback to simple string replacement if parsing fails
+                # Avoid leaving a trailing & or ?
+                v = v.replace("&supa=base-pooler.x", "").replace("?supa=base-pooler.x", "")
+        
         return v
 
     # ── JWT ─────────────────────────────────────────────────────────────────
