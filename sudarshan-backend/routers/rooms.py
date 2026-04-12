@@ -5,7 +5,7 @@ Rooms router – /create-room, /join-room, /rooms, /dh/*
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from core.dh import server_dh_step1, server_dh_step2
 from core.security import get_current_user_id
@@ -34,13 +34,13 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     summary="Create a new private room",
 )
-async def create_room(
+def create_room(
     body: CreateRoomRequest,
     user_id: str = Depends(get_current_user_id),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     try:
-        room = await room_service.create_room(db, body, user_id)
+        room = room_service.create_room(db, body, user_id)
         return room
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
@@ -51,13 +51,13 @@ async def create_room(
     response_model=RoomResponse,
     summary="Join a room using its passkey",
 )
-async def join_room(
+def join_room(
     body: JoinRoomRequest,
     user_id: str = Depends(get_current_user_id),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     try:
-        room = await room_service.join_room(db, body, user_id)
+        room = room_service.join_room(db, body, user_id)
         return room
     except ValueError as exc:
         code = (
@@ -73,11 +73,11 @@ async def join_room(
     response_model=RoomListResponse,
     summary="List all rooms the current user belongs to",
 )
-async def list_rooms(
+def list_rooms(
     user_id: str = Depends(get_current_user_id),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
-    rooms = await room_service.get_user_rooms(db, user_id)
+    rooms = room_service.get_user_rooms(db, user_id)
     return RoomListResponse(rooms=rooms, total=len(rooms))
 
 
@@ -93,7 +93,7 @@ async def list_rooms(
         "The client then generates its own private/public key pair locally."
     ),
 )
-async def dh_init(_: str = Depends(get_current_user_id)):
+def dh_init(_: str = Depends(get_current_user_id)):
     data = server_dh_step1()
     return DHPublicKeyResponse(
         server_public_key=data["server_public_key"],
@@ -113,7 +113,7 @@ async def dh_init(_: str = Depends(get_current_user_id)):
         "The first 32 bytes form the AES-256 key used to encrypt messages."
     ),
 )
-async def dh_complete(
+def dh_complete(
     body: DHCompleteRequest,
     _: str = Depends(get_current_user_id),
 ):

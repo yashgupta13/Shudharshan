@@ -48,11 +48,9 @@ class Settings(BaseSettings):
     def validate_db_url(cls, v: str) -> str:
         if not v:
             raise ValueError("DATABASE_URL must be set")
-        # asyncpg driver is required
-        if v.startswith("postgresql://"):
-            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # Standard postgresql driver is used for sync
         if v.startswith("postgres://"):
-            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+            v = v.replace("postgres://", "postgresql://", 1)
         return v
 
 

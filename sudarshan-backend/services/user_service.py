@@ -6,7 +6,7 @@ import logging
 import uuid
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from core.config import settings
 from core.security import hash_password, verify_password, create_access_token
@@ -17,7 +17,7 @@ from services import stream_service
 logger = logging.getLogger(__name__)
 
 
-async def create_user(db: AsyncSession, data: SignupRequest) -> User:
+def create_user(db: Session, data: SignupRequest) -> User:
     """
     Register a new user.
     Raises ValueError if username/email already exists.
@@ -26,7 +26,7 @@ async def create_user(db: AsyncSession, data: SignupRequest) -> User:
     stmt = select(User).where(
         (User.username == data.username) | (User.email == data.email)
     )
-    existing = (await db.execute(stmt)).scalar_one_or_none()
+    existing = db.execute(stmt).scalar_one_or_none()
     if existing:
         if existing.username == data.username:
             raise ValueError("Username already taken")
@@ -39,8 +39,8 @@ async def create_user(db: AsyncSession, data: SignupRequest) -> User:
         password_hash=hash_password(data.password),
     )
     db.add(user)
-    await db.flush()          # get the generated id without committing
-    await db.refresh(user)
+    db.flush()          # get the generated id without committing
+    db.refresh(user)
 
     # Sync user with Stream
     stream_service.sync_user(str(user.id), user.username)
@@ -49,15 +49,15 @@ async def create_user(db: AsyncSession, data: SignupRequest) -> User:
     return user
 
 
-async def authenticate_user(
-    db: AsyncSession, username: str, password: str
+def authenticate_user(
+    db: Session, username: str, password: str
 ) -> TokenResponse:
     """
     Verify credentials and return a JWT access token.
     Raises ValueError on invalid credentials.
     """
     stmt = select(User).where(User.username == username, User.is_active == True)
-    user = (await db.execute(stmt)).scalar_one_or_none()
+    user = db.execute(stmt).scalar_one_or_none()
 
     if not user or not verify_password(password, user.password_hash):
         raise ValueError("Invalid username or password")
@@ -73,11 +73,11 @@ async def authenticate_user(
     )
 
 
-async def get_user_by_id(db: AsyncSession, user_id: str) -> User | None:
+def get_user_by_id(db: Session, user_id: str) -> User | None:
     """Return a User by UUID string, or None."""
     try:
         uid = uuid.UUID(user_id)
     except ValueError:
         return None
     stmt = select(User).where(User.id == uid, User.is_active == True)
-    return (await db.execute(stmt)).scalar_one_or_none()
+    return db.execute(stmt).scalar_one_or_none()

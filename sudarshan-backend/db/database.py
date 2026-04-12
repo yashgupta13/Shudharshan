@@ -1,16 +1,16 @@
 """
-Async SQLAlchemy engine, session factory, and DB initialisation.
+Synchronous SQLAlchemy engine, session factory, and DB initialisation.
 """
 
 import logging
-from typing import AsyncGenerator
+from typing import Generator
 
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
+from sqlalchemy import create_engine
+from sqlalchemy.orm import (
+    Session,
+    sessionmaker,
+    DeclarativeBase,
 )
-from sqlalchemy.orm import DeclarativeBase
 
 from core.config import settings
 
@@ -22,7 +22,7 @@ class Base(DeclarativeBase):
 
 
 # ─── Engine ─────────────────────────────────────────────────────────────────
-engine = create_async_engine(
+engine = create_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     pool_size=10,
@@ -32,9 +32,9 @@ engine = create_async_engine(
 )
 
 # ─── Session factory ────────────────────────────────────────────────────────
-AsyncSessionLocal = async_sessionmaker(
+SessionLocal = sessionmaker(
     bind=engine,
-    class_=AsyncSession,
+    class_=Session,
     expire_on_commit=False,
     autoflush=False,
     autocommit=False,
@@ -42,26 +42,25 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 # ─── FastAPI dependency ──────────────────────────────────────────────────────
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+def get_db() -> Generator[Session, None, None]:
     """Yield a database session and ensure it is closed after use."""
-    async with AsyncSessionLocal() as session:
+    with SessionLocal() as session:
         try:
             yield session
-            await session.commit()
+            session.commit()
         except Exception:
-            await session.rollback()
+            session.rollback()
             raise
         finally:
-            await session.close()
+            session.close()
 
 
 # ─── Table initialisation ────────────────────────────────────────────────────
-async def init_db() -> None:
+def init_db() -> None:
     """Create all tables if they don't exist (idempotent)."""
     # Import models so SQLAlchemy registers them with Base.metadata
     import models.user    # noqa: F401
     import models.room    # noqa: F401
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    Base.metadata.create_all(bind=engine)
     logger.info("Database schema synchronised")

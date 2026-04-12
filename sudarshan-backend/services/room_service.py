@@ -6,7 +6,7 @@ import logging
 import uuid
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from core.security import hash_passkey, verify_passkey
 from models.room import Room, RoomMember
@@ -16,8 +16,8 @@ from services import stream_service
 logger = logging.getLogger(__name__)
 
 
-async def create_room(
-    db: AsyncSession, data: CreateRoomRequest, creator_id: str
+def create_room(
+    db: Session, data: CreateRoomRequest, creator_id: str
 ) -> Room:
     """
     Create a new private room.
@@ -31,12 +31,12 @@ async def create_room(
         created_by=creator_uuid,
     )
     db.add(room)
-    await db.flush()
+    db.flush()
 
     # Creator automatically becomes a member
     membership = RoomMember(user_id=creator_uuid, room_id=room.id)
     db.add(membership)
-    await db.refresh(room)
+    db.refresh(room)
 
     # Automatically create Stream messaging channel with creator as member
     stream_service.create_channel(str(room.id), creator_id, room.room_name)
@@ -45,8 +45,8 @@ async def create_room(
     return room
 
 
-async def join_room(
-    db: AsyncSession, data: JoinRoomRequest, user_id: str
+def join_room(
+    db: Session, data: JoinRoomRequest, user_id: str
 ) -> Room:
     """
     Validate passkey and add user to room.
@@ -54,7 +54,7 @@ async def join_room(
     """
     # Fetch room
     stmt = select(Room).where(Room.id == data.room_id)
-    room = (await db.execute(stmt)).scalar_one_or_none()
+    room = db.execute(stmt).scalar_one_or_none()
     if not room:
         raise ValueError("Room not found")
 
@@ -69,14 +69,14 @@ async def join_room(
         RoomMember.user_id == user_uuid,
         RoomMember.room_id == room.id,
     )
-    existing = (await db.execute(stmt_m)).scalar_one_or_none()
+    existing = db.execute(stmt_m).scalar_one_or_none()
     if existing:
         logger.info("User %s re-joined room %s", user_id, room.id)
         return room
 
     membership = RoomMember(user_id=user_uuid, room_id=room.id)
     db.add(membership)
-    await db.flush()
+    db.flush()
 
     # Automatically add new member to the Stream channel
     stream_service.add_member_to_channel(str(room.id), user_id)
@@ -85,7 +85,7 @@ async def join_room(
     return room
 
 
-async def get_user_rooms(db: AsyncSession, user_id: str) -> list[Room]:
+def get_user_rooms(db: Session, user_id: str) -> list[Room]:
     """Return all rooms the user is a member of."""
     user_uuid = uuid.UUID(user_id)
     stmt = (
@@ -94,16 +94,16 @@ async def get_user_rooms(db: AsyncSession, user_id: str) -> list[Room]:
         .where(RoomMember.user_id == user_uuid)
         .order_by(Room.created_at.desc())
     )
-    result = await db.execute(stmt)
+    result = db.execute(stmt)
     return list(result.scalars().all())
 
 
-async def is_room_member(db: AsyncSession, room_id: uuid.UUID, user_id: str) -> bool:
+def is_room_member(db: Session, room_id: uuid.UUID, user_id: str) -> bool:
     """Return True if user is a member of the given room."""
     user_uuid = uuid.UUID(user_id)
     stmt = select(RoomMember).where(
         RoomMember.room_id == room_id,
         RoomMember.user_id == user_uuid,
     )
-    result = await db.execute(stmt)
+    result = db.execute(stmt)
     return result.scalar_one_or_none() is not None

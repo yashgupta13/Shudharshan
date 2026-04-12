@@ -26,7 +26,7 @@ logger = logging.getLogger("sudarshan")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🛡️  SUDARSHAN backend initialising …")
-    await init_db()
+    init_db()
     logger.info("✅  Database tables verified / created")
     yield
     logger.info("🔒  SUDARSHAN backend shutting down")
@@ -62,7 +62,7 @@ app.include_router(stream.router,  prefix="/api/v1", tags=["Stream Video"])
 
 # ─── Health ─────────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])
-async def root():
+def root():
     return {
         "system": "SUDARSHAN",
         "status": "operational",
@@ -71,5 +71,5 @@ async def root():
 
 
 @app.get("/health", tags=["Health"])
-async def health():
+def health():
     return {"status": "ok"}

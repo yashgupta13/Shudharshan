@@ -4,7 +4,7 @@ Stream Video router – /token
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from core.security import get_current_user_id
 from db.database import get_db
@@ -19,10 +19,10 @@ router = APIRouter()
     summary="Generate a Stream Video token for the authenticated user",
     response_model=StreamTokenResponse
 )
-async def get_stream_token(
+def get_stream_token(
     user_id: str,
     current_user_id: str = Depends(get_current_user_id),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     """
     Returns a Stream token for the requested user, if they are authenticated.
@@ -33,7 +33,7 @@ async def get_stream_token(
             detail="Not authorized to get token for this user"
         )
     # Fetch user to get username for syncing
-    user = await user_service.get_user_by_id(db, user_id)
+    user = user_service.get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

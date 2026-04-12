@@ -84,7 +84,7 @@ def decode_access_token(token: str) -> dict:
 
 # ─── FastAPI dependency: current authenticated user ──────────────────────────
 
-async def get_current_user_id(
+def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> str:
     """
