@@ -10,16 +10,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0",
-    "zustand": "^4.5.0",
-    "socket.io-client": "^4.7.4",
-    "lucide-react": "^0.344.0",
+    "@stream-io/video-react-sdk": "^1.35.1",
+    "@stream-io/video-styling": "^1.13.0",
+    "clsx": "^2.1.0",
     "crypto-js": "^4.2.0",
     "date-fns": "^3.3.1",
+    "lucide-react": "^0.344.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
-    "clsx": "^2.1.0"
+    "react-router-dom": "^6.22.0",
+    "stream-chat": "^9.41.0",
+    "stream-chat-react": "^13.14.3",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.56",

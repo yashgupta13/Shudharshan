@@ -3,6 +3,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
 import LoadingScreen from './components/LoadingScreen';
+import { useStream } from './hooks/useStream';
+import { Chat } from 'stream-chat-react';
+import { StreamVideo } from '@stream-io/video-react-sdk';
+
+import 'stream-chat-react/dist/css/v2/index.css';
+import '@stream-io/video-react-sdk/dist/css/styles.css';
+
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
@@ -17,6 +24,27 @@ function ProtectedRoute({ children }) {
 function PublicRoute({ children }) {
   const token = useAuthStore(s => s.token);
   return !token ? children : <Navigate to="/dashboard" replace />;
+}
+
+function StreamAppWrapper({ children }) {
+  const { isClientReady, chatClient, videoClient, error } = useStream();
+
+  if (error) {
+    return <div className="p-4 text-danger">Stream Connection Error: {error}</div>;
+  }
+
+  if (!isClientReady) {
+    return <LoadingScreen/>;
+  }
+
+  // Provider Wrap
+  return (
+    <StreamVideo client={videoClient}>
+      <Chat client={chatClient} theme="str-chat__theme-dark">
+        {children}
+      </Chat>
+    </StreamVideo>
+  );
 }
 
 export default function App() {
@@ -43,8 +71,8 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/room/:roomId" element={<ProtectedRoute><ChatRoomPage /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><StreamAppWrapper><DashboardPage /></StreamAppWrapper></ProtectedRoute>} />
+          <Route path="/room/:roomId" element={<ProtectedRoute><StreamAppWrapper><ChatRoomPage /></StreamAppWrapper></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>

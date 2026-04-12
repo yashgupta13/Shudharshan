@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = `${API_BASE}/api/v1`;
 
 class ApiError extends Error {
   constructor(message, status) {
@@ -44,6 +45,11 @@ export const roomsApi = {
   leave: (roomId) => request(`/rooms/${roomId}/leave`, { method: 'POST' }),
   info: (roomId) => request(`/rooms/${roomId}`),
   members: (roomId) => request(`/rooms/${roomId}/members`),
+};
+
+// ─── Stream ─────────────────────────────────
+export const streamApi = {
+  getToken: (userId) => request(`/stream/token/${userId}`),
 };
 
 export { ApiError };

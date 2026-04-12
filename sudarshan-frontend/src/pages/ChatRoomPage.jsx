@@ -1,107 +1,75 @@
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
-import { useWebSocket } from '../hooks/useWebSocket';
-import { roomsApi } from '../services/api';
+import { useChatContext, Channel, Window, MessageList, MessageInput, ChannelHeader } from 'stream-chat-react';
+import { useStreamVideoClient, StreamCall, SpeakerLayout, CallControls } from '@stream-io/video-react-sdk';
 import Sidebar from '../components/Sidebar';
-import RoomHeader from '../components/RoomHeader';
-import ChatWindow from '../components/ChatWindow';
-import ChatInput from '../components/ChatInput';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Video, PhoneOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ChatRoomPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const {
-    rooms, addRoom, setCurrentRoom, getCurrentMessages,
-    getTypingUsers, wsStatus, onlineUsers, encryptionKeys
-  } = useChatStore();
+  const { client: chatClient } = useChatContext();
+  const videoClient = useStreamVideoClient();
 
-  const [room, setRoom] = useState(null);
+  const [channel, setChannel] = useState(null);
+  const [call, setCall] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [loadingRoom, setLoadingRoom] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const { sendEncrypted, sendTyping } = useWebSocket(roomId);
-
-  // Load room info
   useEffect(() => {
-    setCurrentRoom(roomId);
+    if (!chatClient || !user || !roomId) return;
 
-    // Check if we already have room in store
-    const existing = rooms.find(r => r.id === roomId);
-    if (existing) {
-      setRoom(existing);
-      setLoadingRoom(false);
-      return;
-    }
-
-    // Fetch from API
-    roomsApi.info(roomId)
-      .then(data => {
-        setRoom(data);
-        addRoom(data);
-      })
-      .catch(() => {
-        toast.error('Room not found or access denied');
-        navigate('/dashboard');
-      })
-      .finally(() => setLoadingRoom(false));
-
-    return () => setCurrentRoom(null);
-  }, [roomId]);
-
-  const messages = getCurrentMessages();
-  const typingUsers = getTypingUsers(roomId);
-  const onlineCount = (onlineUsers[roomId] || []).length;
-  const encryptionReady = !!encryptionKeys[roomId]?.aesKey;
-
-  const handleSend = useCallback(async ({ type, text, file }) => {
-    if (type === 'file' && file) {
-      // Read file and send as base64 (for demo; real app would upload to S3/CDN)
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target.result;
-        // In a real app, upload to server and get URL back
-        // For now, add message locally with object URL
-        const url = URL.createObjectURL(file);
-        const { addMessage } = useChatStore.getState();
-        addMessage(roomId, {
-          id: `local-${Date.now()}`,
-          content: file.name,
-          sender: user.username,
-          timestamp: Date.now(),
-          isFile: true,
-          fileUrl: url,
-          fileType: file.type,
-          self: true,
-          encrypted: false,
+    const setupStream = async () => {
+      try {
+        const newChannel = chatClient.channel('messaging', roomId, {
+          name: `Room ${roomId}`,
+          members: [user.id || user.username],
         });
-      };
-      reader.readAsDataURL(file);
+        await newChannel.watch();
+        setChannel(newChannel);
+      } catch (err) {
+         console.error('Failed to join channel', err);
+         toast.error('Failed to join room securely');
+         navigate('/dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      // If there's also text, send it
-      if (text) await sendEncrypted(text);
-      return;
+    setupStream();
+
+    return () => {
+        // cleanup optionally handled by context at a higher level
+    };
+  }, [chatClient, roomId, user, navigate]);
+
+  const joinCall = async () => {
+     if (!videoClient) return;
+     try {
+       const newCall = videoClient.call('default', roomId);
+       await newCall.join({ create: true });
+       setCall(newCall);
+     } catch (err) {
+       toast.error('Failed to start call');
+     }
+  };
+
+  const leaveCall = async () => {
+    if (call) {
+      await call.leave();
+      setCall(null);
     }
+  };
 
-    if (text) {
-      await sendEncrypted(text);
-    }
-  }, [roomId, user, sendEncrypted]);
-
-  const handleTyping = useCallback((isTyping) => {
-    sendTyping(isTyping);
-  }, [sendTyping]);
-
-  if (loadingRoom) {
+  if (loading || !channel) {
     return (
       <div className="h-screen bg-void grid-bg flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border border-accent/40 border-t-accent animate-spin mx-auto mb-4" />
-          <p className="text-muted text-xs tracking-widest">LOADING SECURE ROOM...</p>
+          <p className="text-muted text-xs tracking-widest">CONNECTING TO SECURE STREAM...</p>
         </div>
       </div>
     );
@@ -127,9 +95,8 @@ export default function ChatRoomPage() {
       )}
 
       {/* Main chat area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile menu button in header */}
-        <div className="md:hidden absolute top-3 left-3 z-20">
+      <div className="flex-1 flex flex-col min-w-0 relative bg-panel">
+        <div className="md:hidden absolute top-3 left-3 z-50">
           <button
             onClick={() => setSidebarOpen(v => !v)}
             className="w-9 h-9 border border-border-bright bg-panel flex items-center justify-center text-muted hover:text-accent transition-colors"
@@ -138,38 +105,38 @@ export default function ChatRoomPage() {
           </button>
         </div>
 
-        <RoomHeader
-          room={room}
-          onlineCount={onlineCount}
-          wsStatus={wsStatus}
-          encryptionReady={encryptionReady}
-        />
-
-        {/* Connection warning */}
-        {wsStatus === 'disconnected' && (
-          <div className="bg-danger/10 border-b border-danger/30 px-4 py-2 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-danger rounded-full" />
-            <span className="text-xs text-danger">Connection lost. Messages may not be delivered.</span>
+        {call ? (
+          <div className="flex-1 flex flex-col bg-panel z-40 p-4">
+             <div className="flex justify-between items-center mb-4 pt-10 md:pt-0">
+                <h2 className="text-accent font-bold">Secure Video Call</h2>
+                <button onClick={leaveCall} className="bg-danger text-white px-3 py-1 flex items-center gap-2">
+                   <PhoneOff className="w-4 h-4"/> Leave
+                </button>
+             </div>
+             <div className="flex-1 bg-void border border-border overflow-hidden rounded">
+                <StreamCall call={call}>
+                    <SpeakerLayout />
+                    <CallControls onLeave={leaveCall} />
+                </StreamCall>
+             </div>
           </div>
+        ) : (
+          <Channel channel={channel}>
+            <Window>
+              <div className="flex justify-between items-center border-b border-border p-2 bg-[#050508] pl-16 md:pl-2">
+                 <div className="text-muted text-sm font-mono">
+                     Connected to <span className="text-accent">{channel.data?.name}</span>
+                 </div>
+                 <button onClick={joinCall} className="flex items-center gap-2 text-accent px-3 py-1 border border-accent hover:bg-accent/10 transition-colors bg-void">
+                    <Video className="w-4 h-4"/> Start Encrypted Call
+                 </button>
+              </div>
+              {/* <ChannelHeader /> */}
+              <MessageList />
+              <MessageInput />
+            </Window>
+          </Channel>
         )}
-        {wsStatus === 'reconnecting' && (
-          <div className="bg-gold/10 border-b border-gold/30 px-4 py-2 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-gold rounded-full animate-pulse" />
-            <span className="text-xs text-gold">Reconnecting to secure channel...</span>
-          </div>
-        )}
-
-        <ChatWindow
-          messages={messages}
-          typingUsers={typingUsers}
-          roomName={room?.name || roomId}
-        />
-
-        <ChatInput
-          onSend={handleSend}
-          onTyping={handleTyping}
-          disabled={wsStatus === 'disconnected'}
-        />
       </div>
     </div>
   );
