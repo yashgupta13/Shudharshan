@@ -25,15 +25,15 @@ def get_stream_token(
     db: Session = Depends(get_db),
 ):
     """
-    Returns a Stream token for the requested user, if they are authenticated.
+    Returns a Stream token for the requested user.
+    Uses the authenticated current_user_id as the source of truth to prevent
+    mismatches from stale frontend localStorage.
     """
-    if user_id != current_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to get token for this user"
-        )
+    # Always prioritize the ID from the valid JWT token
+    target_id = current_user_id
+    
     # Fetch user to get username for syncing
-    user = user_service.get_user_by_id(db, user_id)
+    user = user_service.get_user_by_id(db, target_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
