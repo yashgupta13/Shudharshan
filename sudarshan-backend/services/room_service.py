@@ -21,14 +21,13 @@ def create_room(
 ) -> Room:
     """
     Create a new private room.
-    The frontend sends a SHA-256 hashed passkey, which we hash again here.
+    The primary key 'id' stores the friendly 'XXXX-XXXX' ID.
     """
     creator_uuid = uuid.UUID(creator_id)
     room = Room(
-        id=uuid.uuid4(),
+        id=data.room_id.upper(), # Friendly ID is the Primary Key
         name=data.name,
         description=data.description,
-        friendly_id=data.room_id.upper(), # Ensuring friendly ID is uppercase
         passkey_hash=hash_passkey(data.passkey_hash), 
         created_by=creator_uuid,
     )
@@ -42,9 +41,9 @@ def create_room(
     db.refresh(room)
 
     # Automatically create Stream messaging channel with creator as member
-    stream_service.create_channel(str(room.id), creator_id, room.name)
+    stream_service.create_channel(room.id, creator_id, room.name)
 
-    logger.info("Room created: %s (%s) by user %s", room.name, room.friendly_id, creator_id)
+    logger.info("Room created: %s (%s) by user %s", room.name, room.id, creator_id)
     return room
 
 
@@ -53,10 +52,10 @@ def join_room(
 ) -> Room:
     """
     Validate passkey (double-hash) and add user to room.
-    Uses friendly_id (XXXX-XXXX) for lookup.
+    Uses the friendly ID (XXXX-XXXX) as the primary 'id'.
     """
-    # Fetch room by friendly_id
-    stmt = select(Room).where(Room.friendly_id == data.room_id.upper())
+    # Fetch room by its primary id (the friendly ID)
+    stmt = select(Room).where(Room.id == data.room_id.upper())
     room = db.execute(stmt).scalar_one_or_none()
     if not room:
         raise ValueError("Room not found")
@@ -101,7 +100,7 @@ def get_user_rooms(db: Session, user_id: str) -> list[Room]:
     return list(result.scalars().all())
 
 
-def is_room_member(db: Session, room_id: uuid.UUID, user_id: str) -> bool:
+def is_room_member(db: Session, room_id: str, user_id: str) -> bool:
     """Return True if user is a member of the given room."""
     user_uuid = uuid.UUID(user_id)
     stmt = select(RoomMember).where(

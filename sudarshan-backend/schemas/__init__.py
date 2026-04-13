@@ -69,9 +69,8 @@ class JoinRoomRequest(BaseModel):
 
 
 class RoomResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     name: str
-    room_id: Optional[str] = None  # Friendly ID
     description: Optional[str] = None
     created_by: uuid.UUID
     created_at: datetime
