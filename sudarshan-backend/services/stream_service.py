@@ -53,8 +53,9 @@ def create_channel(room_id: str, creator_id: str, name: str) -> None:
     Creates a Stream messaging channel for the given room.
     """
     try:
-        channel = chat_client.channel("messaging", room_id)
-        channel.create(creator_id, {"name": name})
+        # Pass the channel data to the constructor, and user_id to .create()
+        channel = chat_client.channel("messaging", room_id, data={"name": name})
+        channel.create(creator_id)
         logger.info(f"Created Stream channel for room {room_id}")
     except Exception as e:
         logger.error(f"Error creating Stream channel {room_id}: {str(e)}")
