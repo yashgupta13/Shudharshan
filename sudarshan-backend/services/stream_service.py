@@ -48,13 +48,13 @@ def get_user_token(user_id: str, username: Optional[str] = None) -> str:
         logger.error(f"Error generating Stream token for {user_id}: {str(e)}")
         raise ValueError(f"Stream token generation failed: {str(e)}")
 
-def create_channel(room_id: str, creator_id: str, room_name: str) -> None:
+def create_channel(room_id: str, creator_id: str, name: str) -> None:
     """
     Creates a Stream messaging channel for the given room.
     """
     try:
         channel = chat_client.channel("messaging", room_id)
-        channel.create(creator_id, {"name": room_name})
+        channel.create(creator_id, {"name": name})
         logger.info(f"Created Stream channel for room {room_id}")
     except Exception as e:
         logger.error(f"Error creating Stream channel {room_id}: {str(e)}")

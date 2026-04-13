@@ -147,7 +147,7 @@ Tables are created automatically on first startup.
 
 **Create room body:**
 ```json
-{ "room_name": "Ops Team", "passkey": "super-secret-phrase" }
+{ "name": "Ops Team", "passkey": "super-secret-phrase" }
 ```
 
 **Join room body:**

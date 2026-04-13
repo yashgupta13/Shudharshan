@@ -21,13 +21,15 @@ def create_room(
 ) -> Room:
     """
     Create a new private room.
-    Passkey is hashed with SHA-256 before persistence.
+    The frontend sends a SHA-256 hashed passkey, which we hash again here.
     """
     creator_uuid = uuid.UUID(creator_id)
     room = Room(
         id=uuid.uuid4(),
-        room_name=data.room_name,
-        passkey_hash=hash_passkey(data.passkey),   # SHA-256 – plain passkey never stored
+        name=data.name,
+        description=data.description,
+        friendly_id=data.room_id.upper(), # Ensuring friendly ID is uppercase
+        passkey_hash=hash_passkey(data.passkey_hash), 
         created_by=creator_uuid,
     )
     db.add(room)
@@ -36,12 +38,13 @@ def create_room(
     # Creator automatically becomes a member
     membership = RoomMember(user_id=creator_uuid, room_id=room.id)
     db.add(membership)
+    db.flush()
     db.refresh(room)
 
     # Automatically create Stream messaging channel with creator as member
-    stream_service.create_channel(str(room.id), creator_id, room.room_name)
+    stream_service.create_channel(str(room.id), creator_id, room.name)
 
-    logger.info("Room created: %s by user %s", room.room_name, creator_id)
+    logger.info("Room created: %s (%s) by user %s", room.name, room.friendly_id, creator_id)
     return room
 
 
@@ -49,17 +52,17 @@ def join_room(
     db: Session, data: JoinRoomRequest, user_id: str
 ) -> Room:
     """
-    Validate passkey and add user to room.
-    Raises ValueError on invalid room or passkey.
+    Validate passkey (double-hash) and add user to room.
+    Uses friendly_id (XXXX-XXXX) for lookup.
     """
-    # Fetch room
-    stmt = select(Room).where(Room.id == data.room_id)
+    # Fetch room by friendly_id
+    stmt = select(Room).where(Room.friendly_id == data.room_id.upper())
     room = db.execute(stmt).scalar_one_or_none()
     if not room:
         raise ValueError("Room not found")
 
-    # Verify passkey
-    if not verify_passkey(data.passkey, room.passkey_hash):
+    # Verify double-hashed passkey
+    if not verify_passkey(data.passkey_hash, room.passkey_hash):
         raise ValueError("Invalid passkey")
 
     user_uuid = uuid.UUID(user_id)
