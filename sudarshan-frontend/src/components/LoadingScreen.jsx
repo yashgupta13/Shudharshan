@@ -9,6 +9,9 @@ export default function LoadingScreen() {
       <div className="font-display text-accent text-xs tracking-[0.3em] animate-pulse">
         INITIALIZING SUDARSHAN...
       </div>
+      <div className="font-display text-accent/30 text-[9px] tracking-[0.5em] -mt-4 uppercase">
+        Developed by Tanish Khandelwal
+      </div>
     </div>
   );
 }

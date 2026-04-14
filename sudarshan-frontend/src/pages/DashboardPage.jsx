@@ -264,7 +264,10 @@ export default function DashboardPage() {
             <div className="absolute -top-px -left-px w-1.5 h-1.5 border-t border-l border-accent" />
           </div>
           <div>
-            <span className="font-display text-sm text-accent tracking-widest">SUDARSHAN</span>
+            <div className="flex items-center gap-2">
+              <span className="font-display text-sm text-accent tracking-widest">SUDARSHAN</span>
+              <span className="text-[8px] text-accent/40 font-display tracking-widest pt-0.5">DEV: TANISH KHANDELWAL</span>
+            </div>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 bg-success rounded-full status-online" />
               <span className="text-xs text-muted">SECURE NODE ACTIVE</span>

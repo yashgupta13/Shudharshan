@@ -23,6 +23,7 @@ export default function Sidebar({ currentRoomId, onSelectRoom }) {
         </div>
         <div>
           <div className="font-display text-xs text-accent tracking-widest leading-none">SUDARSHAN</div>
+          <div className="text-[7px] text-accent/40 font-display tracking-widest mt-1 uppercase">DEV: TANISH KHANDELWAL</div>
           <div className="flex items-center gap-1 mt-0.5">
             <div className="w-1 h-1 bg-success rounded-full" />
             <span className="text-xs text-muted" style={{ fontSize: '10px' }}>SECURE</span>
