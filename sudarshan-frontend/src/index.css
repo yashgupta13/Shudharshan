@@ -18,7 +18,8 @@
     background-color: #050508;
     color: #e0e0f0;
     font-family: 'IBM Plex Mono', monospace;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
 

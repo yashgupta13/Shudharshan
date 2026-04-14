@@ -81,7 +81,6 @@ export default function SignupPage() {
             <div className="absolute -bottom-px -right-px w-3 h-3 border-b border-r border-gold" />
           </div>
           <h1 className="font-display text-2xl text-gold tracking-widest mb-1">SUDARSHAN</h1>
-          <div className="text-[10px] text-gold/50 tracking-[0.4em] mb-4 font-display">Tanish Khandelwal</div>
           <p className="text-muted text-xs tracking-widest">OPERATOR REGISTRATION</p>
         </div>
 
