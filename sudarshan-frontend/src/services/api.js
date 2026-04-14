@@ -23,6 +23,9 @@ async function request(endpoint, options = {}) {
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      window.dispatchEvent(new Event('unauthorized'));
+    }
     const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
     throw new ApiError(err.detail || err.message || 'Request failed', res.status);
   }

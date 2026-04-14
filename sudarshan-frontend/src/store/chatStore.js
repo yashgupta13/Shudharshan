@@ -102,4 +102,14 @@ export const useChatStore = create((set, get) => ({
     const { rooms, currentRoomId } = get();
     return rooms.find(r => r.id === currentRoomId) || null;
   },
+
+  reset: () => set({
+    rooms: [],
+    currentRoomId: null,
+    messages: {},
+    typingUsers: {},
+    encryptionKeys: {},
+    onlineUsers: {},
+    wsStatus: 'disconnected',
+  }),
 }));

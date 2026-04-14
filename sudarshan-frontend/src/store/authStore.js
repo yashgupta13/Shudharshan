@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { authApi } from '../services/api';
+import { disconnectStreamClients } from '../services/stream';
+import { useChatStore } from './chatStore';
 
 const TOKEN_KEY = 'sudarshan_token';
 const USER_KEY = 'sudarshan_user';
@@ -44,6 +46,11 @@ export const useAuthStore = create((set, get) => ({
   logout: () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    
+    // Clear other stores and connections
+    useChatStore.getState().reset();
+    disconnectStreamClients();
+
     set({ user: null, token: null, error: null });
   },
 
@@ -51,3 +58,10 @@ export const useAuthStore = create((set, get) => ({
 
   isAuthenticated: () => !!get().token,
 }));
+
+// Listen for unauthorized events from API service
+if (typeof window !== 'undefined') {
+  window.addEventListener('unauthorized', () => {
+    useAuthStore.getState().logout();
+  });
+}
