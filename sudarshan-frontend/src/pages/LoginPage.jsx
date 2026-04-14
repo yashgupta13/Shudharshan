@@ -131,10 +131,13 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Security notice */}
-        <div className="mt-4 flex items-center justify-center gap-2 text-muted text-xs">
-          <div className="w-1.5 h-1.5 bg-success rounded-full status-online" />
-          <span>AES-256 + ECDH SECURED SESSION</span>
+        {/* Security notice and Developer Credit */}
+        <div className="mt-4 flex flex-col items-center gap-1 text-muted text-[10px] tracking-[0.2em]">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-success rounded-full status-online" />
+            <span>AES-256 + ECDH SECURED SESSION</span>
+          </div>
+          <div className="opacity-40">DEVELOPED BY TANISH KHANDELWAL</div>
         </div>
       </div>
     </div>

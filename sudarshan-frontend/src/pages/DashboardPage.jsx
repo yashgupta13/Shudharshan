@@ -352,6 +352,13 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+        
+        {/* Footer Credit */}
+        <div className="mt-12 mb-4 text-center">
+          <p className="text-[10px] text-muted tracking-[0.3em] opacity-30 uppercase font-display">
+            SUDARSHAN PROTOCOL // DEV: TANISH KHANDELWAL
+          </p>
+        </div>
       </main>
 
       {showCreate && (
