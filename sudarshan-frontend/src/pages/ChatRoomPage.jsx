@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { useChatContext, Channel, Window, MessageList, ChannelHeader } from 'stream-chat-react';
+import { useChatContext, Channel, Window, MessageList, MessageInput, ChannelHeader } from 'stream-chat-react';
 import { useStreamVideoClient, StreamCall, SpeakerLayout, CallControls } from '@stream-io/video-react-sdk';
 import Sidebar from '../components/Sidebar';
 import TranslationControls from '../components/TranslationControls';
-import TranslatedMessage from '../components/TranslatedMessage';
-import TranslationMessageInput from '../components/TranslationMessageInput';
 import { Menu, X, Video, PhoneOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -138,8 +136,8 @@ export default function ChatRoomPage() {
                  </div>
               </div>
               {/* <ChannelHeader /> */}
-              <MessageList Message={TranslatedMessage} />
-              <TranslationMessageInput />
+              <MessageList />
+              <MessageInput />
             </Window>
           </Channel>
         )}

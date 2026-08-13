@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { MessageSimple, useMessageContext } from 'stream-chat-react';
 import { useTranslationStore } from '../store/translationStore';
 import { useEncryptionStore } from '../store/encryptionStore';
@@ -6,7 +6,8 @@ import { decryptWithPasskey } from '../utils/encryption';
 import { Languages, Lock, AlertTriangle } from 'lucide-react';
 
 export default function TranslatedMessage() {
-  const { message, channel } = useMessageContext();
+  const messageContext = useMessageContext();
+  const { message, channel } = messageContext;
   const { enabled, selectedLanguage, translateText } = useTranslationStore();
   const { getRoomKey, hasRoomKey } = useEncryptionStore();
   const [translatedText, setTranslatedText] = useState(null);
@@ -15,7 +16,7 @@ export default function TranslatedMessage() {
   const [decryptionError, setDecryptionError] = useState(false);
 
   const roomId = channel?.id;
-  const isEncrypted = message.customData?.encrypted;
+  const isEncrypted = message?.customData?.encrypted;
   const hasEncryption = hasRoomKey(roomId);
 
   // Step 1: Decrypt if encrypted
@@ -24,7 +25,7 @@ export default function TranslatedMessage() {
       if (isEncrypted && hasEncryption) {
         try {
           const encryptionKey = getRoomKey(roomId);
-          const { ciphertext, iv } = message.customData;
+          const { ciphertext, iv } = message.customData || {};
 
           if (ciphertext && iv) {
             const decrypted = await decryptWithPasskey(ciphertext, iv, encryptionKey);
@@ -45,19 +46,26 @@ export default function TranslatedMessage() {
       }
     };
 
-    decrypt();
-  }, [isEncrypted, hasEncryption, message.customData, getRoomKey, roomId]);
+    if (message) {
+      decrypt();
+    }
+  }, [isEncrypted, hasEncryption, message, getRoomKey, roomId]);
 
   // Step 2: Translate if translation is enabled
   useEffect(() => {
     const translate = async () => {
-      const textToTranslate = decryptedText || message.text;
+      const textToTranslate = decryptedText || message?.text;
 
       if (enabled && selectedLanguage !== 'eng_Latn' && textToTranslate && textToTranslate !== '[encrypted]') {
-        const translated = await translateText(textToTranslate, 'eng_Latn', selectedLanguage);
-        if (translated !== textToTranslate) {
-          setTranslatedText(translated);
-        } else {
+        try {
+          const translated = await translateText(textToTranslate, 'eng_Latn', selectedLanguage);
+          if (translated !== textToTranslate) {
+            setTranslatedText(translated);
+          } else {
+            setTranslatedText(null);
+          }
+        } catch (error) {
+          console.error('Translation failed:', error);
           setTranslatedText(null);
         }
       } else {
@@ -65,22 +73,43 @@ export default function TranslatedMessage() {
       }
     };
 
-    if (decryptedText !== null || !isEncrypted) {
+    if (message && (decryptedText !== null || !isEncrypted)) {
       translate();
     }
-  }, [enabled, selectedLanguage, decryptedText, message.text, translateText, isEncrypted]);
+  }, [enabled, selectedLanguage, decryptedText, message, translateText, isEncrypted]);
 
-  // Create a modified message object with decrypted text
-  const displayMessage = {
-    ...message,
-    text: decryptionError
+  // Create modified message with updated text
+  const modifiedMessage = useMemo(() => {
+    if (!message) return null;
+
+    const displayText = decryptionError
       ? '[Decryption failed - missing key]'
-      : translatedText || decryptedText || message.text,
-  };
+      : translatedText || decryptedText || message.text;
+
+    return {
+      ...message,
+      text: displayText,
+    };
+  }, [message, decryptionError, translatedText, decryptedText]);
+
+  // Create modified context with updated message
+  const modifiedContext = useMemo(() => {
+    return {
+      ...messageContext,
+      message: modifiedMessage,
+    };
+  }, [messageContext, modifiedMessage]);
+
+  if (!message) {
+    return null;
+  }
 
   return (
     <div className="str-chat__message-wrapper">
-      <MessageSimple message={displayMessage} />
+      {/* Wrap MessageSimple with modified context */}
+      <div className="str-chat__message-simple-wrapper">
+        <MessageSimple />
+      </div>
 
       {/* Encryption indicator */}
       {isEncrypted && !decryptionError && (
@@ -97,6 +126,27 @@ export default function TranslatedMessage() {
           <span>Failed to decrypt - missing encryption key</span>
         </div>
       )}
+
+      {/* Translation toggle */}
+      {translatedText && !decryptionError && (
+        <div className="str-chat__message-translation">
+          <button
+            onClick={() => setShowOriginal(!showOriginal)}
+            className="flex items-center gap-1 text-xs text-accent/70 hover:text-accent mt-1 ml-10 transition-colors"
+          >
+            <Languages className="w-3 h-3" />
+            <span>{showOriginal ? 'Show translation' : 'Show original'}</span>
+          </button>
+          {showOriginal && (
+            <div className="text-xs text-muted/70 mt-1 ml-10 italic">
+              Original: {decryptedText || message.text}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
       {/* Translation toggle */}
       {translatedText && !decryptionError && (

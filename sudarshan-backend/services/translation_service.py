@@ -9,7 +9,7 @@ from core.config import settings
 
 logger = logging.getLogger(__name__)
 
-TRANSLATION_MODEL_URL = getattr(settings, "TRANSLATION_MODEL_URL", "http://localhost:8000")
+TRANSLATION_MODEL_URL = getattr(settings, "TRANSLATION_MODEL_URL", "http://127.0.0.1:8002")
 
 SUPPORTED_LANGUAGES = {
     "eng_Latn": "English",

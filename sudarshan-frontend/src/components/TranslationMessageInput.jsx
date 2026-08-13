@@ -20,11 +20,20 @@ export default function TranslationMessageInput() {
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
 
-    if (!text.trim() || isSending) return;
+    console.log('[DEBUG] handleSubmit called');
+    console.log('[DEBUG] sendMessage:', typeof sendMessage);
+    console.log('[DEBUG] channel:', channel);
+    console.log('[DEBUG] text:', text);
+
+    if (!text.trim() || isSending) {
+      console.log('[DEBUG] Validation failed - text empty or already sending');
+      return;
+    }
 
     setIsSending(true);
     try {
       let messageText = text.trim();
+      console.log('[DEBUG] Starting message send process');
 
       // Step 1: Translate if enabled
       if (enabled && selectedLanguage !== 'eng_Latn') {
@@ -57,6 +66,12 @@ export default function TranslationMessageInput() {
       }
 
       // Step 3: Send the message
+      console.log('[DEBUG] About to send message with:', {
+        text: isEncrypted ? '[encrypted]' : messageText,
+        encrypted: isEncrypted,
+        hasCustomData: !!encryptedPayload
+      });
+
       await sendMessage({
         text: isEncrypted ? '[encrypted]' : messageText,
         customData: {
@@ -67,10 +82,12 @@ export default function TranslationMessageInput() {
         }
       });
 
+      console.log('[DEBUG] Message sent successfully');
       setText('');
     } catch (error) {
-      console.error('Failed to send message:', error);
-      toast.error('Failed to send message');
+      console.error('[DEBUG] Failed to send message:', error);
+      console.error('[DEBUG] Error details:', error.message, error.stack);
+      toast.error('Failed to send message: ' + (error.message || 'Unknown error'));
     } finally {
       setIsSending(false);
     }
