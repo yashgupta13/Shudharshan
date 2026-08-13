@@ -1,13 +1,3 @@
-"""
-FastAPI service for IndicTrans2 translation model.
-
-Run with:
-    uvicorn server:app --host 0.0.0.0 --port 8000
-
-(inside your activated venv — use `python -m uvicorn ...` if `uvicorn`
- on PATH resolves to a different Python install)
-"""
-
 import torch
 from pathlib import Path
 from contextlib import asynccontextmanager
