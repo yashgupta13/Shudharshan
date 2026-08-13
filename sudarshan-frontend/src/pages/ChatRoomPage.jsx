@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { useChatContext, Channel, Window, MessageList, MessageInput, ChannelHeader } from 'stream-chat-react';
+import { useChatContext, Channel, Window, MessageList, ChannelHeader } from 'stream-chat-react';
 import { useStreamVideoClient, StreamCall, SpeakerLayout, CallControls } from '@stream-io/video-react-sdk';
 import Sidebar from '../components/Sidebar';
+import TranslationControls from '../components/TranslationControls';
+import TranslatedMessage from '../components/TranslatedMessage';
+import TranslationMessageInput from '../components/TranslationMessageInput';
 import { Menu, X, Video, PhoneOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -123,17 +126,20 @@ export default function ChatRoomPage() {
         ) : (
           <Channel channel={channel}>
             <Window>
-              <div className="flex justify-between items-center border-b border-border p-2 bg-[#050508] pl-16 md:pl-2">
+              <div className="flex justify-between items-center border-b border-border p-2 bg-[#050508] pl-16 md:pl-2 gap-2 flex-wrap">
                  <div className="text-muted text-sm font-mono">
                      Connected to <span className="text-accent">{channel.data?.name}</span>
                  </div>
-                 <button onClick={joinCall} className="flex items-center gap-2 text-accent px-3 py-1 border border-accent hover:bg-accent/10 transition-colors bg-void">
-                    <Video className="w-4 h-4"/> Start Encrypted Call
-                 </button>
+                 <div className="flex items-center gap-2">
+                   <TranslationControls />
+                   <button onClick={joinCall} className="flex items-center gap-2 text-accent px-3 py-1 border border-accent hover:bg-accent/10 transition-colors bg-void text-xs">
+                      <Video className="w-4 h-4"/> Start Call
+                   </button>
+                 </div>
               </div>
               {/* <ChannelHeader /> */}
-              <MessageList />
-              <MessageInput />
+              <MessageList Message={TranslatedMessage} />
+              <TranslationMessageInput />
             </Window>
           </Channel>
         )}

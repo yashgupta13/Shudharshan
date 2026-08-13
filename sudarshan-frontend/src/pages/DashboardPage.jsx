@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
+import { useEncryptionStore } from '../store/encryptionStore';
 import { roomsApi } from '../services/api';
 import { sha256, generateRoomId, validatePasskey } from '../utils/encryption';
 import {
@@ -39,6 +40,7 @@ function CreateRoomModal({ onClose, onCreated }) {
   const [showKey, setShowKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [roomId] = useState(generateRoomId);
+  const { setupRoomEncryption } = useEncryptionStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,7 +57,11 @@ function CreateRoomModal({ onClose, onCreated }) {
         passkey_hash: hashedPasskey,
         room_id: roomId,
       });
-      toast.success('Secure room created');
+
+      // Store encryption key for this room
+      await setupRoomEncryption(roomId, form.passkey);
+
+      toast.success('Secure room created with E2E encryption');
       onCreated(room);
       onClose();
     } catch (err) {
@@ -128,6 +134,7 @@ function JoinRoomModal({ onClose, onJoined }) {
   const [form, setForm] = useState({ roomId: '', passkey: '' });
   const [showKey, setShowKey] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { setupRoomEncryption } = useEncryptionStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -136,11 +143,16 @@ function JoinRoomModal({ onClose, onJoined }) {
     setLoading(true);
     try {
       const hashedPasskey = await sha256(form.passkey);
+      const roomIdUpper = form.roomId.toUpperCase().trim();
       const room = await roomsApi.join({
-        room_id: form.roomId.toUpperCase().trim(),
+        room_id: roomIdUpper,
         passkey_hash: hashedPasskey,
       });
-      toast.success('Joined secure room');
+
+      // Store encryption key for this room
+      await setupRoomEncryption(roomIdUpper, form.passkey);
+
+      toast.success('Joined secure room with E2E encryption');
       onJoined(room);
       onClose();
     } catch (err) {

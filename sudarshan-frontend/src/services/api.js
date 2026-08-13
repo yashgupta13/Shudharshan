@@ -55,4 +55,11 @@ export const streamApi = {
   getToken: (userId) => request(`/stream/token/${userId}`),
 };
 
+// ─── Translation ────────────────────────────
+export const translationApi = {
+  health: () => request('/translation/health'),
+  getLanguages: () => request('/translation/languages'),
+  translate: (data) => request('/translation/translate', { method: 'POST', body: JSON.stringify(data) }),
+};
+
 export { ApiError };

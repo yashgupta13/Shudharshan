@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from db.database import init_db
-from routers import auth, rooms, stream
+from routers import auth, rooms, stream, translation
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -55,9 +55,10 @@ app.add_middleware(
 )
 
 # ─── Routers ────────────────────────────────────────────────────────────────
-app.include_router(auth.router,    prefix="/api/v1", tags=["Authentication"])
-app.include_router(rooms.router,   prefix="/api/v1", tags=["Rooms"])
-app.include_router(stream.router,  prefix="/api/v1", tags=["Stream Video"])
+app.include_router(auth.router,        prefix="/api/v1", tags=["Authentication"])
+app.include_router(rooms.router,       prefix="/api/v1", tags=["Rooms"])
+app.include_router(stream.router,      prefix="/api/v1", tags=["Stream Video"])
+app.include_router(translation.router, prefix="/api/v1", tags=["Translation"])
 
 
 # ─── Health ─────────────────────────────────────────────────────────────────
